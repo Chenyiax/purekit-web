@@ -1,7 +1,7 @@
 import React from 'react';
 import { Row, Col, Card, Typography } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { PictureOutlined, SecurityScanOutlined, FileTextOutlined, EditOutlined } from '@ant-design/icons';
+import { PictureOutlined, SecurityScanOutlined, FileTextOutlined, EditOutlined, FilePdfOutlined, FileImageOutlined } from '@ant-design/icons';
 
 const { Title, Paragraph } = Typography;
 
@@ -13,6 +13,18 @@ const tools = [
     path: '/image-converter',
   },
   {
+    title: 'PDF 转图片',
+    description: '将 PDF 逐页转换为 PNG 图片包',
+    icon: <FilePdfOutlined style={{ fontSize: '32px', color: '#ff4d4f' }} />,
+    path: '/pdf-converter',
+  },
+  {
+    title: '图片转 PDF',
+    description: '将多张图片合并为一个高质量 PDF',
+    icon: <FileImageOutlined style={{ fontSize: '32px', color: '#1890ff' }} />,
+    path: '/image-to-pdf',
+  },
+  {
     title: '密码生成',
     description: '安全可靠的随机密码生成器',
     icon: <SecurityScanOutlined style={{ fontSize: '32px', color: '#52c41a' }} />,
@@ -21,14 +33,14 @@ const tools = [
   },
   {
     title: '文本处理',
-    description: '大小写转换、中英文符号转换等基础文本工具',
+    description: '大小写转换、词数统计等基础文本工具',
     icon: <FileTextOutlined style={{ fontSize: '32px', color: '#722ed1' }} />,
     path: '/text-processor',
     disabled: false,
   },
   {
     title: 'JSON 格式化',
-    description: '一键整理、校验、压缩和转义 JSON 数据',
+    description: '一键整理、校验和压缩 JSON 数据',
     icon: <EditOutlined style={{ fontSize: '32px', color: '#fa8c16' }} />,
     path: '/json-formatter',
     disabled: false,

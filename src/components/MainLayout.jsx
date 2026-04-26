@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Layout, Menu, Typography, Button, Drawer } from 'antd';
 import { Link, useLocation } from 'react-router-dom';
-import { HomeOutlined, PictureOutlined, MenuOutlined, SecurityScanOutlined, FileTextOutlined, EditOutlined } from '@ant-design/icons';
+import { HomeOutlined, PictureOutlined, MenuOutlined, SecurityScanOutlined, FileTextOutlined, EditOutlined, FilePdfOutlined, FileImageOutlined } from '@ant-design/icons';
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
@@ -33,6 +33,16 @@ const MainLayout = ({ children }) => {
       label: <Link to="/image-converter" onClick={() => setDrawerVisible(false)}>图片转换</Link>,
     },
     {
+      key: '/pdf-converter',
+      icon: <FilePdfOutlined />,
+      label: <Link to="/pdf-converter" onClick={() => setDrawerVisible(false)}>PDF 转图片</Link>,
+    },
+    {
+      key: '/image-to-pdf',
+      icon: <FileImageOutlined />,
+      label: <Link to="/image-to-pdf" onClick={() => setDrawerVisible(false)}>图片转 PDF</Link>,
+    },
+    {
       key: '/password-generator',
       icon: <SecurityScanOutlined />,
       label: <Link to="/password-generator" onClick={() => setDrawerVisible(false)}>密码生成</Link>,
@@ -50,7 +60,7 @@ const MainLayout = ({ children }) => {
   ];
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f5f7fa' }}>
+    <Layout style={{ minHeight: '100vh', background: 'transparent' }}>
       <Header style={{ 
         position: 'sticky', 
         top: 0, 
@@ -59,30 +69,34 @@ const MainLayout = ({ children }) => {
         display: 'flex', 
         alignItems: 'center',
         justifyContent: 'space-between',
-        background: '#fff',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-        padding: isMobile ? '0 20px' : '0 50px',
+        background: 'rgba(255, 255, 255, 0.7)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.3)',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.04)',
+        padding: isMobile ? '0 24px' : '0 60px',
         height: '64px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Title level={4} style={{ margin: 0, color: '#1890ff', fontSize: isMobile ? '18px' : '22px' }}>
-            PureKit
-          </Title>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
+            <Title level={4} className="logo-text" style={{ margin: 0, fontSize: isMobile ? '26px' : '34px' }}>
+              Pure<span style={{ fontWeight: 400 }}>Kit</span><span className="logo-dot">.</span>
+            </Title>
+          </Link>
         </div>
 
         {isMobile ? (
           <>
             <Button 
               type="text" 
-              icon={<MenuOutlined style={{ fontSize: '20px' }} />} 
+              icon={<MenuOutlined style={{ fontSize: '20px', color: '#1890ff' }} />} 
               onClick={() => setDrawerVisible(true)} 
             />
             <Drawer
-              title="菜单"
+              title={<span className="logo-text">PureKit 菜单</span>}
               placement="right"
               onClose={() => setDrawerVisible(false)}
               open={drawerVisible}
-              width={250}
+              width={260}
             >
               <Menu
                 mode="inline"
@@ -97,7 +111,8 @@ const MainLayout = ({ children }) => {
             mode="horizontal"
             selectedKeys={[location.pathname]}
             items={menuItems}
-            style={{ flex: 1, border: 'none', justifyContent: 'flex-end', minWidth: 0 }}
+            className="custom-menu"
+            style={{ flex: 1, border: 'none', justifyContent: 'flex-end', minWidth: 0, marginLeft: '24px' }}
           />
         )}
       </Header>
