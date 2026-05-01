@@ -15,10 +15,18 @@
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
   /* 多点蓝白渐变背景 */
   background-color: #ffffff;
   background-image: 
@@ -27,7 +35,7 @@ body {
     radial-gradient(at 100% 100%, #e6efff 0%, transparent 50%),
     radial-gradient(at 0% 100%, #f0f7ff 0%, transparent 50%),
     radial-gradient(at 50% 50%, #e1edff 0%, transparent 50%);
-  background-attachment: fixed;
+  background-attachment: scroll; /* 使用 position: fixed 代替 fixed attachment */
 }
 
 #root {

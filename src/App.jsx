@@ -8,6 +8,7 @@ import ImageToPdf from './pages/ImageToPdf';
 import PasswordGenerator from './pages/PasswordGenerator';
 import TextProcessor from './pages/TextProcessor';
 import JsonFormatter from './pages/JsonFormatter';
+import TextDiff from './pages/TextDiff';
 import 'antd/dist/reset.css';
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
           <Route path="/password-generator" element={<PasswordGenerator />} />
           <Route path="/text-processor" element={<TextProcessor />} />
           <Route path="/json-formatter" element={<JsonFormatter />} />
+          <Route path="/text-diff" element={<TextDiff />} />
         </Routes>
       </MainLayout>
     </Router>

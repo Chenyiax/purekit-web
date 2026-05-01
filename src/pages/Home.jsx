@@ -1,14 +1,14 @@
 import React from 'react';
 import { Row, Col, Card, Typography } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { PictureOutlined, SecurityScanOutlined, FileTextOutlined, EditOutlined, FilePdfOutlined, FileImageOutlined } from '@ant-design/icons';
+import { PictureOutlined, SecurityScanOutlined, FileTextOutlined, EditOutlined, FilePdfOutlined, FileImageOutlined, DiffOutlined } from '@ant-design/icons';
 
 const { Title, Paragraph } = Typography;
 
 const tools = [
   {
     title: '图片转换',
-    description: '快速将图片转换为各种常见格式 (JPG, PNG, WebP等)',
+    description: '快速将图片转换为各种常见格式',
     icon: <PictureOutlined style={{ fontSize: '32px', color: '#1890ff' }} />,
     path: '/image-converter',
   },
@@ -45,6 +45,13 @@ const tools = [
     path: '/json-formatter',
     disabled: false,
   },
+  {
+    title: '文本差异对比',
+    description: '对比两段文本或代码的细微差别',
+    icon: <DiffOutlined style={{ fontSize: '32px', color: '#13c2c2' }} />,
+    path: '/text-diff',
+    disabled: false,
+  },
 ];
 
 const Home = () => {
@@ -52,6 +59,22 @@ const Home = () => {
 
   return (
     <div style={{ textAlign: 'center' }}>
+      <style>{`
+        .tool-card {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+          border: 1px solid transparent !important;
+        }
+        .tool-card:hover {
+          transform: translateY(-8px) !important;
+          box-shadow: 0 12px 24px rgba(0,0,0,0.08) !important;
+          border-color: #e6f7ff !important;
+          background: #fff !important;
+        }
+        .tool-card:hover .anticon {
+          transform: scale(1.1);
+          transition: transform 0.3s ease;
+        }
+      `}</style>
       <div style={{ marginBottom: '40px', marginTop: '10px' }}>
         <Title level={2} style={{ fontSize: 'clamp(24px, 5vw, 32px)' }}>简约高效的工具集合</Title>
         <Paragraph type="secondary" style={{ fontSize: '14px', maxWidth: '600px', margin: '0 auto' }}>
@@ -64,11 +87,12 @@ const Home = () => {
           <Col xs={24} sm={12} md={6} key={index}>
             <Card
               hoverable
+              className="tool-card"
               style={{ 
                 height: '100%', 
-                borderRadius: '12px', 
+                borderRadius: '16px', 
                 border: 'none',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
                 opacity: tool.disabled ? 0.6 : 1,
                 cursor: tool.disabled ? 'not-allowed' : 'pointer',
                 textAlign: 'left',

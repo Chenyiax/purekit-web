@@ -8,9 +8,17 @@ import {
   Row, 
   Col, 
   Alert,
-  Result
+  Result,
+  List,
+  Space
 } from 'antd';
-import { DownloadOutlined, FileImageOutlined, ExclamationCircleOutlined, FilePdfOutlined } from '@ant-design/icons';
+import { 
+  DownloadOutlined, 
+  FileImageOutlined, 
+  ExclamationCircleOutlined, 
+  FilePdfOutlined,
+  DeleteOutlined
+} from '@ant-design/icons';
 import axios from 'axios';
 
 const { Title, Paragraph, Text } = Typography;
@@ -31,14 +39,16 @@ const ImageToPdf = () => {
     setBackendError(null);
     const formData = new FormData();
     fileList.forEach(file => {
-      formData.append('images', file.originFileObj || file);
+      const fileToUpload = file.originFileObj || file;
+      if (fileToUpload instanceof File || fileToUpload instanceof Blob) {
+        formData.append('images', fileToUpload);
+      }
     });
 
     setConverting(true);
     try {
       const response = await axios.post('/api/pdf/images-to-pdf', formData, {
-        responseType: 'blob',
-        headers: { 'Content-Type': 'multipart/form-data' },
+        responseType: 'blob'
       });
 
       if (response.data.type === 'application/json') {
@@ -49,7 +59,7 @@ const ImageToPdf = () => {
       } else {
         const url = window.URL.createObjectURL(new Blob([response.data]));
         setResultPdf(url);
-        message.success('转换成功！所有图片已合并为 PDF。');
+        message.success('转换成功！');
       }
     } catch (error) {
       console.error('Conversion error:', error);
@@ -59,28 +69,26 @@ const ImageToPdf = () => {
     }
   };
 
-  const props = {
-    onRemove: (file) => {
-      const index = fileList.indexOf(file);
-      const newFileList = fileList.slice();
-      newFileList.splice(index, 1);
-      setFileList(newFileList);
-      setResultPdf(null);
-    },
+  const removeFile = (uid) => {
+    setFileList(prev => prev.filter(item => item.uid !== uid));
+    setResultPdf(null);
+  };
+
+  const uploadProps = {
+    multiple: true,
+    accept: 'image/*',
+    showUploadList: false,
     beforeUpload: (file) => {
-      const isImage = file.type.startsWith('image/');
+      const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif|bmp)$/i.test(file.name);
       if (!isImage) {
-        message.error('只能上传图片文件！');
+        message.error(`${file.name} 格式不支持`);
         return Upload.LIST_IGNORE;
       }
-      setFileList([...fileList, file]);
+      file.preview = URL.createObjectURL(file);
+      setFileList(prev => [...prev, file]);
       setResultPdf(null);
-      setBackendError(null);
       return false;
-    },
-    fileList,
-    multiple: true,
-    accept: 'image/*'
+    }
   };
 
   const downloadResult = () => {
@@ -94,90 +102,125 @@ const ImageToPdf = () => {
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '800px', margin: '0 auto', paddingBottom: fileList.length > 0 ? '100px' : '24px' }}>
       <div style={{ marginBottom: '24px' }}>
-        <Title level={3} style={{ marginBottom: '8px' }}>图片转 PDF</Title>
+        <Title level={3}>图片转 PDF</Title>
         <Paragraph type="secondary">
-          将一张或多张图片按顺序合并为一个 PDF 文件。支持 JPG, PNG, WebP 等常见格式。
+          支持多图合并。图片将按上传顺序排列。
         </Paragraph>
       </div>
 
       {backendError && (
         <Alert
-          message="后端错误"
-          description={
-            <div>
-              <Text strong>错误代码: </Text> <Text code>{backendError.code}</Text> <br />
-              <Text strong>错误消息: </Text> {backendError.message}
-            </div>
-          }
+          message="转换错误"
+          description={backendError.message}
           type="error"
           showIcon
-          icon={<ExclamationCircleOutlined />}
-          style={{ marginBottom: '20px', borderRadius: '8px' }}
+          style={{ marginBottom: '20px' }}
           closable
-          onClose={() => setBackendError(null)}
         />
       )}
 
-      <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-        <Row gutter={[24, 24]}>
-          <Col span={24}>
-            <Dragger {...props} style={{ padding: '20px' }}>
-              <p className="ant-upload-drag-icon">
-                <FileImageOutlined style={{ color: '#1890ff' }} />
-              </p>
-              <p className="ant-upload-text">点击或拖拽多张图片到此区域</p>
-              <p className="ant-upload-hint" style={{ fontSize: '12px' }}>支持多选上传，图片将按上传顺序排列在 PDF 页面中</p>
+      {!resultPdf ? (
+        <>
+          <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+            <Dragger {...uploadProps} style={{ padding: '20px', background: '#fafafa' }}>
+              <p className="ant-upload-drag-icon"><FileImageOutlined /></p>
+              <p className="ant-upload-text">点击或拖拽图片</p>
+              <p className="ant-upload-hint">支持多选，单张最大 10MB</p>
             </Dragger>
-          </Col>
 
-          {fileList.length > 0 && !resultPdf && (
-            <Col span={24} style={{ textAlign: 'center' }}>
+            {fileList.length > 0 && (
+              <div style={{ marginTop: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <Text strong>已选图片 ({fileList.length})</Text>
+                  <Button type="link" danger onClick={() => setFileList([])}>清空全部</Button>
+                </div>
+                
+                <div style={{ maxHeight: '350px', overflowY: 'auto', border: '1px solid #f0f0f0', borderRadius: '8px' }}>
+                  <List
+                    itemLayout="horizontal"
+                    dataSource={fileList}
+                    renderItem={(file, index) => (
+                      <List.Item
+                        style={{ padding: '8px 12px' }}
+                        actions={[
+                          <Button 
+                            type="text" 
+                            danger 
+                            icon={<DeleteOutlined />} 
+                            onClick={() => removeFile(file.uid)} 
+                          />
+                        ]}
+                      >
+                        <List.Item.Meta
+                          avatar={
+                            <img 
+                              src={file.preview} 
+                              alt="preview" 
+                              style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} 
+                            />
+                          }
+                          title={<Text ellipsis style={{ maxWidth: '180px' }}>{file.name}</Text>}
+                          description={`#${index + 1}`}
+                        />
+                      </List.Item>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+          </Card>
+
+          {fileList.length > 0 && (
+            <div style={{ 
+              position: 'fixed', 
+              bottom: 0, 
+              left: 0, 
+              right: 0, 
+              background: '#fff', 
+              padding: '16px 24px', 
+              boxShadow: '0 -2px 10px rgba(0,0,0,0.05)',
+              zIndex: 1000,
+              display: 'flex',
+              justifyContent: 'center'
+            }}>
               <Button 
                 type="primary" 
                 size="large"
                 icon={<FilePdfOutlined />} 
                 onClick={handleUpload} 
                 loading={converting}
-                style={{ height: '48px', padding: '0 32px', borderRadius: '8px' }}
+                style={{ 
+                  width: '100%',
+                  maxWidth: '500px',
+                  height: '48px', 
+                  borderRadius: '8px',
+                  fontSize: '16px'
+                }}
               >
-                {converting ? '正在合并...' : `合并 ${fileList.length} 张图片并生成 PDF`}
+                {converting ? '正在合并图片...' : `立即合并 ${fileList.length} 张图片`}
               </Button>
-            </Col>
+            </div>
           )}
-
-          {resultPdf && (
-            <Col span={24}>
-              <Result
-                status="success"
-                title="合并完成！"
-                subTitle="您的图片已成功合并为 PDF 文件，点击下方按钮下载。"
-                extra={[
-                  <Button 
-                    type="primary" 
-                    key="download" 
-                    icon={<DownloadOutlined />} 
-                    onClick={downloadResult}
-                    size="large"
-                  >
-                    下载 PDF 文件
-                  </Button>,
-                  <Button 
-                    key="again" 
-                    onClick={() => {
-                      setFileList([]);
-                      setResultPdf(null);
-                    }}
-                  >
-                    继续转换
-                  </Button>
-                ]}
-              />
-            </Col>
-          )}
-        </Row>
-      </Card>
+        </>
+      ) : (
+        <Card bordered={false} style={{ borderRadius: '12px', textAlign: 'center', padding: '24px 0' }}>
+          <Result
+            status="success"
+            title="PDF 生成成功"
+            subTitle="您可以点击下方按钮下载合并后的文件"
+            extra={[
+              <Button type="primary" key="dl" icon={<DownloadOutlined />} onClick={downloadResult} size="large">
+                下载 PDF
+              </Button>,
+              <Button key="re" onClick={() => {setResultPdf(null); setFileList([]);}}>
+                重新转换
+              </Button>
+            ]}
+          />
+        </Card>
+      )}
     </div>
   );
 };

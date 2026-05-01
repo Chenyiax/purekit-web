@@ -1,7 +1,18 @@
-import React, { useState } from 'react';
-import { Layout, Menu, Typography, Button, Drawer } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Layout, Menu, Typography, Button, Drawer, Space, Tooltip } from 'antd';
 import { Link, useLocation } from 'react-router-dom';
-import { HomeOutlined, PictureOutlined, MenuOutlined, SecurityScanOutlined, FileTextOutlined, EditOutlined, FilePdfOutlined, FileImageOutlined } from '@ant-design/icons';
+import { 
+  HomeOutlined, 
+  PictureOutlined, 
+  MenuOutlined, 
+  SecurityScanOutlined, 
+  FileTextOutlined, 
+  EditOutlined, 
+  FilePdfOutlined, 
+  FileImageOutlined, 
+  DiffOutlined, 
+  GithubOutlined 
+} from '@ant-design/icons';
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
@@ -9,13 +20,9 @@ const { Title } = Typography;
 const MainLayout = ({ children }) => {
   const location = useLocation();
   const [drawerVisible, setDrawerVisible] = useState(false);
-  
-  // Use a simple media query check. Since I can't install new packages easily without potential policy issues, 
-  // I'll use a standard window listener or just rely on CSS media queries for the toggle.
-  // Actually, I'll use a state based on window width for a more robust "React way".
-  const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -57,12 +64,17 @@ const MainLayout = ({ children }) => {
       icon: <EditOutlined />,
       label: <Link to="/json-formatter" onClick={() => setDrawerVisible(false)}>JSON 格式化</Link>,
     },
+    {
+      key: '/text-diff',
+      icon: <DiffOutlined />,
+      label: <Link to="/text-diff" onClick={() => setDrawerVisible(false)}>文本差异对比</Link>,
+    },
   ];
 
   return (
     <Layout style={{ minHeight: '100vh', background: 'transparent' }}>
       <Header style={{ 
-        position: 'sticky', 
+        position: 'fixed', 
         top: 0, 
         zIndex: 1000, 
         width: '100%', 
@@ -117,14 +129,31 @@ const MainLayout = ({ children }) => {
         )}
       </Header>
 
-      <Content style={{ padding: isMobile ? '20px 16px' : '40px 50px' }}>
+      <Content style={{ 
+        padding: isMobile ? '20px 16px' : '40px 50px',
+        marginTop: '64px'
+      }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           {children}
         </div>
       </Content>
 
       <Footer style={{ textAlign: 'center', color: '#8c8c8c', padding: '24px 16px' }}>
-        PureKit ©{new Date().getFullYear()} Minimalist Utility Hub
+        <div style={{ marginBottom: '8px' }}>
+          PureKit ©{new Date().getFullYear()} Minimalist Utility Hub
+        </div>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          fontSize: '14px',
+          gap: '8px' 
+        }}>
+          <GithubOutlined style={{ fontSize: '18px' }} />
+          <span>GitHub:</span>
+          <a href="https://github.com/Chenyiax/purekit-web" target="_blank" rel="noopener noreferrer" style={{ color: '#8c8c8c' }}>Web</a>
+          <a href="https://github.com/Chenyiax/purekit-backend" target="_blank" rel="noopener noreferrer" style={{ color: '#8c8c8c' }}>Backend</a>
+        </div>
       </Footer>
     </Layout>
   );

@@ -22,6 +22,10 @@ FROM nginx:alpine
 # 拷贝构建后的静态资源
 COPY --from=builder /app/dist /usr/share/nginx/html
 
+# 拷贝 SSL 证书到容器内
+COPY purekit.cn_nginx /etc/nginx/certs
+RUN ls -la /etc/nginx/certs
+
 # 拷贝自定义 nginx 配置
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 

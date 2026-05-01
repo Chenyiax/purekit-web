@@ -9,11 +9,19 @@ import {
   Row, 
   Col, 
   Image,
-  Space,
   Alert,
-  Slider
+  Slider,
+  List,
+  Result,
+  Space
 } from 'antd';
-import { InboxOutlined, DownloadOutlined, SwapOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { 
+  InboxOutlined, 
+  DownloadOutlined, 
+  SwapOutlined, 
+  ExclamationCircleOutlined,
+  DeleteOutlined
+} from '@ant-design/icons';
 import axios from 'axios';
 
 const { Title, Paragraph, Text } = Typography;
@@ -38,20 +46,15 @@ const ImageConverter = () => {
 
     setBackendError(null);
     const formData = new FormData();
-    
-    // 修复：兼容 antd 的不同文件包装格式
     const fileToUpload = fileList[0].originFileObj || fileList[0];
     formData.append('image', fileToUpload);
 
     setConverting(true);
     try {
-      // 使用动态质量参数
       const response = await axios.post(`/api/image/convert?format=${targetFormat}&quality=${quality}`, formData, {
-        responseType: 'blob',
-        headers: { 'Content-Type': 'multipart/form-data' },
+        responseType: 'blob'
       });
 
-      // 检查返回的是否真的是图片 (如果是 JSON 错误，axios 也会因为 responseType: 'blob' 把它转成 blob)
       if (response.data.type === 'application/json') {
         const text = await response.data.text();
         const errorData = JSON.parse(text);
@@ -74,28 +77,36 @@ const ImageConverter = () => {
           message.error('转换过程中发生错误，请重试');
         }
       } else {
-        message.error('无法连接到后端服务，请检查服务器是否启动');
+        message.error('无法连接到后端服务，请检查网络');
       }
     } finally {
       setConverting(false);
     }
   };
 
-  const props = {
-    onRemove: () => {
-      setFileList([]);
-      setResultImage(null);
-      setBackendError(null);
-    },
+  const removeFile = () => {
+    setFileList([]);
+    setResultImage(null);
+    setBackendError(null);
+  };
+
+  const uploadProps = {
+    multiple: false,
+    maxCount: 1,
+    accept: 'image/*',
+    showUploadList: false,
     beforeUpload: (file) => {
+      const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif|bmp)$/i.test(file.name);
+      if (!isImage) {
+        message.error('只能上传图片文件！');
+        return Upload.LIST_IGNORE;
+      }
+      file.preview = URL.createObjectURL(file);
       setFileList([file]);
       setResultImage(null);
       setBackendError(null);
       return false;
-    },
-    fileList,
-    maxCount: 1,
-    accept: 'image/*'
+    }
   };
 
   const downloadResult = () => {
@@ -109,9 +120,9 @@ const ImageConverter = () => {
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '800px', margin: '0 auto', paddingBottom: (fileList.length > 0 && !resultImage) ? '160px' : '24px' }}>
       <div style={{ marginBottom: '24px' }}>
-        <Title level={3} style={{ marginBottom: '8px' }}>图片格式转换</Title>
+        <Title level={3}>图片格式转换</Title>
         <Paragraph type="secondary">
           将您的图片上传并转换为指定格式。支持 JPEG, PNG, WebP 等主流格式。
         </Paragraph>
@@ -119,13 +130,8 @@ const ImageConverter = () => {
 
       {backendError && (
         <Alert
-          message="后端错误"
-          description={
-            <div>
-              <Text strong>错误代码: </Text> <Text code>{backendError.code}</Text> <br />
-              <Text strong>错误消息: </Text> {backendError.message}
-            </div>
-          }
+          message="转换错误"
+          description={backendError.message}
           type="error"
           showIcon
           icon={<ExclamationCircleOutlined />}
@@ -135,104 +141,152 @@ const ImageConverter = () => {
         />
       )}
 
-      <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-        <Row gutter={[24, 24]}>
-          <Col span={24} style={{ marginBottom: '16px' }}>
-            <Dragger {...props} style={{ padding: '20px' }}>
+      {!resultImage ? (
+        <>
+          <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+            <Dragger {...uploadProps} style={{ padding: '20px', background: '#fafafa' }}>
               <p className="ant-upload-drag-icon">
                 <InboxOutlined />
               </p>
               <p className="ant-upload-text">点击或拖拽图片到此区域</p>
-              <p className="ant-upload-hint" style={{ fontSize: '12px' }}>单次支持一张图片，大小限制5MB</p>
+              <p className="ant-upload-hint" style={{ fontSize: '12px' }}>单张限制 10MB</p>
             </Dragger>
-          </Col>
 
-          <Col span={24}>
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '24px',
-              padding: '0 20px'
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                flexDirection: window.innerWidth < 576 ? 'column' : 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '16px',
-                width: '100%'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <span style={{ marginRight: '12px', whiteSpace: 'nowrap' }}>目标格式:</span>
-                  <Select 
-                    defaultValue="png" 
-                    style={{ width: 120 }} 
-                    onChange={(val) => setTargetFormat(val)}
-                  >
-                    {formats.map(fmt => (
-                      <Option key={fmt} value={fmt}>{fmt.toUpperCase()}</Option>
-                    ))}
-                  </Select>
-                </div>
-                
-                {(targetFormat === 'jpeg' || targetFormat === 'webp') && (
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    width: window.innerWidth < 576 ? '100%' : '300px',
-                    marginLeft: window.innerWidth < 576 ? 0 : '24px'
-                  }}>
-                    <span style={{ marginRight: '12px', whiteSpace: 'nowrap' }}>图片质量:</span>
-                    <Slider 
-                      min={1} 
-                      max={100} 
-                      value={quality} 
-                      onChange={setQuality} 
-                      style={{ flex: 1 }}
-                    />
-                    <span style={{ marginLeft: '12px', width: '30px' }}>{quality}</span>
-                  </div>
-                )}
-
-                <Button 
-                  type="primary" 
-                  icon={<SwapOutlined />} 
-                  onClick={handleUpload} 
-                  loading={converting}
-                  disabled={fileList.length === 0}
-                  block={window.innerWidth < 576}
-                  style={{ height: '40px', marginLeft: (window.innerWidth >= 576 && !(targetFormat === 'jpeg' || targetFormat === 'webp')) ? '16px' : 0 }}
-                >
-                  立即转换
-                </Button>
-              </div>
-            </div>
-          </Col>
-
-          {resultImage && (
-            <Col span={24} style={{ textAlign: 'center', marginTop: '10px', borderTop: '1px solid #f0f0f0', paddingTop: '24px' }}>
-              <Title level={4} style={{ marginBottom: '16px' }}>转换结果</Title>
-              <div style={{ marginBottom: '24px' }}>
-                <Image
-                  maxWidth={400}
-                  src={resultImage}
-                  style={{ borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', objectFit: 'contain' }}
+            {fileList.length > 0 && (
+              <div style={{ marginTop: '24px' }}>
+                <Text strong>已选图片</Text>
+                <List
+                  itemLayout="horizontal"
+                  dataSource={fileList}
+                  style={{ border: '1px solid #f0f0f0', borderRadius: '8px', marginTop: '8px' }}
+                  renderItem={(file) => (
+                    <List.Item
+                      style={{ padding: '8px 12px' }}
+                      actions={[
+                        <Button type="text" danger icon={<DeleteOutlined />} onClick={removeFile} />
+                      ]}
+                    >
+                      <List.Item.Meta
+                        avatar={
+                          <img 
+                            src={file.preview} 
+                            alt="preview" 
+                            style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} 
+                          />
+                        }
+                        title={<Text ellipsis style={{ maxWidth: '200px' }}>{file.name}</Text>}
+                        description={(file.size / 1024).toFixed(2) + ' KB'}
+                      />
+                    </List.Item>
+                  )}
                 />
+
+                <div style={{ marginTop: '24px', padding: '16px', background: '#f9f9f9', borderRadius: '8px' }}>
+                  <Row gutter={[24, 16]} align="middle">
+                    <Col xs={24} sm={12}>
+                      <Space direction="vertical" style={{ width: '100%' }}>
+                        <Text strong>目标格式</Text>
+                        <Select 
+                          value={targetFormat} 
+                          style={{ width: '100%' }} 
+                          onChange={setTargetFormat}
+                        >
+                          {formats.map(fmt => (
+                            <Option key={fmt} value={fmt}>{fmt.toUpperCase()}</Option>
+                          ))}
+                        </Select>
+                      </Space>
+                    </Col>
+                    
+                    {(targetFormat === 'jpeg' || targetFormat === 'webp') && (
+                      <Col xs={24} sm={12}>
+                        <Space direction="vertical" style={{ width: '100%' }}>
+                          <Text strong>转换质量 ({quality})</Text>
+                          <Slider 
+                            min={1} 
+                            max={100} 
+                            value={quality} 
+                            onChange={setQuality} 
+                          />
+                        </Space>
+                      </Col>
+                    )}
+                  </Row>
+                </div>
               </div>
+            )}
+          </Card>
+
+          {fileList.length > 0 && (
+            <div style={{ 
+              position: 'fixed', 
+              bottom: 0, 
+              left: 0, 
+              right: 0, 
+              background: '#fff', 
+              padding: '16px 24px', 
+              boxShadow: '0 -2px 10px rgba(0,0,0,0.05)',
+              zIndex: 1000,
+              display: 'flex',
+              justifyContent: 'center'
+            }}>
               <Button 
                 type="primary" 
-                ghost 
-                icon={<DownloadOutlined />} 
-                onClick={downloadResult}
-                block={window.innerWidth < 576}
+                size="large"
+                icon={<SwapOutlined />} 
+                onClick={handleUpload} 
+                loading={converting}
+                style={{ 
+                  width: '100%',
+                  maxWidth: '500px',
+                  height: '48px', 
+                  borderRadius: '24px',
+                  fontSize: '16px'
+                }}
               >
-                下载转换后的图片
+                {converting ? '正在处理...' : `转换为 ${targetFormat.toUpperCase()}`}
               </Button>
-            </Col>
+            </div>
           )}
-        </Row>
-      </Card>
+        </>
+      ) : (
+        <Card bordered={false} style={{ borderRadius: '12px', textAlign: 'center' }}>
+          <Result
+            status="success"
+            title="转换成功！"
+            subTitle="您的图片已成功转换，点击下方按钮下载。"
+            extra={[
+              <div key="result-img" style={{ marginBottom: '24px' }}>
+                <Image
+                  width={200}
+                  src={resultImage}
+                  style={{ borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
+                />
+              </div>,
+              <Space key="result-actions">
+                <Button 
+                  type="primary" 
+                  icon={<DownloadOutlined />} 
+                  onClick={downloadResult}
+                  size="large"
+                  style={{ borderRadius: '24px', padding: '0 32px' }}
+                >
+                  下载结果
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setFileList([]);
+                    setResultImage(null);
+                  }}
+                  style={{ borderRadius: '24px' }}
+                >
+                  再次转换
+                </Button>
+              </Space>
+            ]}
+          />
+        </Card>
+      )}
     </div>
   );
 };
